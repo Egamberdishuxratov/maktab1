@@ -1,14 +1,40 @@
 @import "tailwindcss";
 
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #0f172a;
+  background: #f8fafc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 html {
   min-height: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(16, 185, 129, 0.12), transparent 22%),
+    linear-gradient(180deg, #f8fafc 0%, #f5fdf8 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 #root {

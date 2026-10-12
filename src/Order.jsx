@@ -1,115 +1,249 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { menuItems } from './data';
+import { useOrderHistory } from './orderHistory';
 
-const taomlar = [
-    { id: 1, nom: "Klassik Mastava", narx: 12000, rasm: "🍲" },
-    { id: 2, nom: "Maktab Somsasi", narx: 6000, rasm: "🥐" },
-    { id: 3, nom: "Meva sharbati (Kompot)", narx: 3000, rasm: "🧃" },
-    { id: 4, nom: "Vitaminga boy salat", narx: 7000, rasm: "🥗" },
-];
+const createOrderId = () => `ORD-${Date.now().toString().slice(-6)}`;
 
 function Order() {
-    const [savatcha, setSavatcha] = useState([]);
-    const [sinf, setSinf] = useState('');
-    const [ism, setIsm] = useState('');
+    const [cart, setCart] = useState([]);
+    const [step, setStep] = useState('products');
+    const [cartOpen, setCartOpen] = useState(false);
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [time, setTime] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const { saveOrder, error: historyError } = useOrderHistory();
 
-    const savatchagaQoshish = (taom) => {
-        const borTaom = savatcha.find(item => item.id === taom.id);
-        if (borTaom) {
-            setSavatcha(savatcha.map(item => item.id === taom.id ? { ...item, soni: item.soni + 1 } : item));
-        } else {
-            setSavatcha([...savatcha, { ...taom, soni: 1 }]);
+    const addToCart = (product) => {
+        setCart((current) => {
+            const existing = current.find((item) => item.id === product.id);
+            return existing
+                ? current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
+                : [...current, { ...product, quantity: 1 }];
+        });
+    };
+
+    const changeQuantity = (id, amount) => {
+        setCart((current) =>
+            current
+                .map((item) => item.id === id ? { ...item, quantity: item.quantity + amount } : item)
+                .filter((item) => item.quantity > 0)
+        );
+    };
+
+    const removeFromCart = (id) => {
+        setCart((current) => current.filter((item) => item.id !== id));
+    };
+
+    const total = cart.reduce((sum, item) => sum + item.narx * item.quantity, 0);
+    const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+    const submitOrder = (event) => {
+        event.preventDefault();
+        if (cart.length === 0) return;
+
+        const order = {
+            id: createOrderId(),
+            name: name.trim(),
+            phone: phone.trim(),
+            time,
+            items: cart.map(({ id, nom, narx, rasm, quantity }) => ({ id, nom, narx, rasm, quantity })),
+            total,
+            status: 'accepted',
+            createdAt: new Date().toISOString(),
+        };
+
+        if (saveOrder(order)) {
+            setCart([]);
+            setName('');
+            setPhone('');
+            setTime('');
+            setStep('products');
+            setSuccessMessage(`Rahmat, ${order.name}! Buyurtmangiz ${order.id} raqami bilan qabul qilindi.`);
         }
     };
 
-    const umumiyNarx = savatcha.reduce((acc, item) => acc + (item.narx * item.soni), 0);
-
-    const buyurtmaniYuborish = (e) => {
-        e.preventDefault();
-        if (!ism || !sinf || savatcha.length === 0) {
-            alert("Iltimos, ma'lumotlarni to'ldiring va taom tanlang!");
-            return;
-        }
-        alert(`Rahmat ${ism}! Buyurtmangiz qabul qilindi. Tanaffusda oshxonadan navbatsiz olib ketishingiz mumkin.`);
-        setSavatcha([]);
-        setIsm('');
-        setSinf('');
-    };
-
-    return (
-        <div className="max-w-6xl mx-auto py-10 px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Chap tomon: Taomlar ro'yxati */}
-            <div className="lg:col-span-2">
-                <h3 className="text-2xl font-bold text-slate-800 mb-6">🛒 Taomlarni Tanlang</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {taomlar.map(taom => (
-                        <div key={taom.id} className="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <span className="text-3xl">{taom.rasm}</span>
-                                <div>
-                                    <h5 className="font-bold text-slate-800">{taom.nom}</h5>
-                                    <p className="text-sm text-green-600 font-semibold">{taom.narx.toLocaleString()} so'm</p>
+    const renderCartItems = () => (
+        cart.length === 0 ? (
+            <p className="cart-empty">Savatchangiz hozircha bo'sh 😕</p>
+        ) : (
+            <>
+                <div className="cart-items">
+                    {cart.map((item) => (
+                        <article className="cart-item" key={item.id}>
+                            <div className="cart-item-heading">
+                                <span className="cart-emoji" aria-hidden="true">{item.rasm}</span>
+                                <div className="cart-item-details">
+                                    <h4>{item.nom}</h4>
+                                    <p>{(item.narx * item.quantity).toLocaleString()} so'm</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => savatchagaQoshish(taom)}
-                                className="bg-green-50 hover:bg-green-100 text-green-700 font-bold px-3 py-1.5 rounded-lg text-xs transition-all"
-                            >
-                                + Qo'shish
-                            </button>
-                        </div>
+                            <div className="cart-item-actions">
+                                <div className="quantity-control" aria-label={`${item.nom} miqdori`}>
+                                    <button type="button" aria-label="Kamaytirish" onClick={() => changeQuantity(item.id, -1)}>−</button>
+                                    <span>{item.quantity}</span>
+                                    <button type="button" aria-label="Ko'paytirish" onClick={() => changeQuantity(item.id, 1)}>+</button>
+                                </div>
+                                <button className="remove-item" type="button" onClick={() => removeFromCart(item.id)}>
+                                    O'chirish
+                                </button>
+                            </div>
+                        </article>
                     ))}
                 </div>
-            </div>
+                <div className="cart-total">
+                    <span>Jami</span>
+                    <strong>{total.toLocaleString()} so'm</strong>
+                </div>
+            </>
+        )
+    );
 
-            {/* O'ng tomon: Savatcha va Forma */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-fit">
-                <h3 className="text-xl font-bold text-slate-800 mb-4">Sizning Savatchangiz</h3>
-
-                {savatcha.length === 0 ? (
-                    <p className="text-sm text-slate-400 py-4 text-center">Savatchangiz hozircha bo'sh 😕</p>
-                ) : (
-                    <div className="space-y-3 mb-6">
-                        {savatcha.map(item => (
-                            <div key={item.id} className="flex justify-between text-sm text-slate-600 border-b border-slate-50 pb-2">
-                                <span>{item.rasm} {item.nom} (x{item.soni})</span>
-                                <span className="font-semibold">{(item.narx * item.soni).toLocaleString()} so'm</span>
+    return (
+        <div className="order-page">
+            <div className="order-content">
+                {step === 'products' ? (
+                    <>
+                        <header className="order-heading">
+                            <div>
+                                <p className="eyebrow">Buyurtma</p>
+                                <h1>Taomlarni tanlang</h1>
+                                <p className="muted-copy">Kerakli mahsulotlarni savatchaga qo'shing.</p>
                             </div>
-                        ))}
-                        <div className="flex justify-between font-bold text-slate-800 pt-2 text-lg">
-                            <span>Umumiy:</span>
-                            <span className="text-green-600">{umumiyNarx.toLocaleString()} so'm</span>
-                        </div>
-                    </div>
-                )}
+                            <span className="product-count">{menuItems.length} ta mahsulot</span>
+                        </header>
 
-                <form onSubmit={buyurtmaniYuborish} className="space-y-4 pt-4 border-t border-slate-100">
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">O'quvchi ismi</label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="Ismingizni kiriting"
-                            className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-xl outline-none focus:border-green-500 text-sm"
-                            value={ism}
-                            onChange={(e) => setIsm(e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">Sinfingiz</label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="Masalan: 9-B"
-                            className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-xl outline-none focus:border-green-500 text-sm"
-                            value={sinf}
-                            onChange={(e) => setSinf(e.target.value)}
-                        />
-                    </div>
-                    <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md">
-                        🚀 Buyurtmani Tasdiqlash
-                    </button>
-                </form>
+                        {successMessage && (
+                            <div className="success-message" role="status">
+                                <span aria-hidden="true">✓</span> {successMessage}
+                            </div>
+                        )}
+
+                        <div className="order-product-grid">
+                            {menuItems.map((product) => (
+                                <article className="product-card order-product" key={product.id}>
+                                    <span className="product-emoji" aria-hidden="true">{product.rasm}</span>
+                                    <div className="order-product-copy">
+                                        <h2>{product.nom}</h2>
+                                        <p>{product.description}</p>
+                                        <strong>{product.narx.toLocaleString()} so'm</strong>
+                                    </div>
+                                    <button className="add-product" type="button" onClick={() => addToCart(product)}>
+                                        + Qo'shish
+                                    </button>
+                                </article>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <section className="checkout-panel">
+                        <button className="back-link" type="button" onClick={() => setStep('products')}>
+                            ← Mahsulot tanlashga qaytish
+                        </button>
+                        <p className="eyebrow">2-qadam · Ma'lumotlar</p>
+                        <h1>Buyurtmani yakunlash</h1>
+                        <p className="muted-copy">Ismingiz, telefon raqamingiz va olib ketish vaqtini kiriting.</p>
+
+                        <div className="checkout-summary">
+                            <div className="checkout-summary-title">
+                                <strong>Siz tanlagan mahsulotlar</strong>
+                                <button type="button" onClick={() => setCartOpen(true)}>Tahrirlash</button>
+                            </div>
+                            {cart.map((item) => (
+                                <div className="summary-row" key={item.id}>
+                                    <span>{item.rasm} {item.nom} × {item.quantity}</span>
+                                    <strong>{(item.narx * item.quantity).toLocaleString()} so'm</strong>
+                                </div>
+                            ))}
+                            <div className="summary-row summary-total">
+                                <span>Jami</span>
+                                <strong>{total.toLocaleString()} so'm</strong>
+                            </div>
+                        </div>
+
+                        <form className="checkout-form" onSubmit={submitOrder}>
+                            <label>
+                                Ism va familiya
+                                <input
+                                    autoComplete="name"
+                                    type="text"
+                                    placeholder="Ismingizni kiriting"
+                                    value={name}
+                                    onChange={(event) => setName(event.target.value)}
+                                    required
+                                />
+                            </label>
+                            <label>
+                                Telefon raqami
+                                <input
+                                    autoComplete="tel"
+                                    type="tel"
+                                    inputMode="tel"
+                                    placeholder="+998 90 123 45 67"
+                                    pattern="(\+998|998|0)?[0-9\s()-]{9,15}"
+                                    title="O'zbekiston telefon raqamini kiriting"
+                                    value={phone}
+                                    onChange={(event) => setPhone(event.target.value)}
+                                    required
+                                />
+                            </label>
+                            <label>
+                                Olib ketish vaqti
+                                <input
+                                    type="time"
+                                    value={time}
+                                    onChange={(event) => setTime(event.target.value)}
+                                    required
+                                />
+                            </label>
+                            {historyError && <p className="form-error" role="alert">{historyError}</p>}
+                            <button className="submit-order" type="submit" disabled={cart.length === 0}>
+                                Buyurtmani tasdiqlash
+                            </button>
+                        </form>
+                    </section>
+                )}
             </div>
+
+            <button
+                className="cart-fab"
+                type="button"
+                onClick={() => setCartOpen(true)}
+                aria-label={`Savatchani ochish, ${itemCount} ta mahsulot`}
+            >
+                <span aria-hidden="true">🛒</span>
+                <span>Savatcha</span>
+                <span className="cart-count">{itemCount}</span>
+            </button>
+
+            {cartOpen && (
+                <div className="drawer-backdrop" onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) setCartOpen(false);
+                }}>
+                    <aside className="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+                        <header className="drawer-header">
+                            <div>
+                                <p className="eyebrow">Tanlanganlar</p>
+                                <h2 id="cart-title">Savatcha ({itemCount})</h2>
+                            </div>
+                            <button type="button" className="close-drawer" onClick={() => setCartOpen(false)} aria-label="Yopish">×</button>
+                        </header>
+                        {renderCartItems()}
+                        <button
+                            className="submit-order drawer-checkout"
+                            type="button"
+                            disabled={cart.length === 0}
+                            onClick={() => {
+                                setCartOpen(false);
+                                setStep('checkout');
+                                setSuccessMessage('');
+                            }}
+                        >
+                            Keyingi qadam: ma'lumotlarni kiriting
+                        </button>
+                    </aside>
+                </div>
+            )}
         </div>
     );
 }
