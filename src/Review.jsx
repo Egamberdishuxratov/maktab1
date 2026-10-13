@@ -28,26 +28,28 @@ function Reviews() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4">
-      <div className="text-center mb-10">
-        <p className="text-sm uppercase tracking-[0.25em] text-emerald-600 font-bold">Sharhlar</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mt-3">💬 Fikr va Mulohazalar</h2>
-        <p className="text-slate-500 mt-2">Ota-onalarimiz va o'quvchilarimizning fikrlari biz uchun muhim</p>
-      </div>
+    <div className="page-inner">
+      <header className="page-heading-row">
+        <div>
+          <span className="section-kicker">JAMOAMIZDAN</span>
+          <h1>Fikr va mulohazalar</h1>
+          <p>O'quvchilar va ota-onalarning oshxona haqidagi fikrlari.</p>
+        </div>
+      </header>
 
-      <form onSubmit={fikrQoshish} className="soft-card p-6 mb-10 space-y-4">
-        <h4 className="text-lg font-bold text-slate-800">O'z fikringizni qoldiring</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={fikrQoshish} className="review-form">
+        <h2>O'z fikringizni qoldiring</h2>
+        <div className="review-form-row">
           <input
             type="text"
             placeholder="Ism va familiyangiz"
-            className="px-4 py-2 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm"
+            aria-label="Ism va familiyangiz"
             value={yangiIsm}
             onChange={(e) => setYangiIsm(e.target.value)}
             required
           />
           <select
-            className="px-4 py-2 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm bg-white"
+            aria-label="Maqomingiz"
             value={maqom}
             onChange={(e) => setMaqom(e.target.value)}
           >
@@ -59,28 +61,28 @@ function Reviews() {
         <textarea
           placeholder="Fikringizni shu yerga yozing..."
           rows="3"
-          className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm"
+          aria-label="Fikringiz"
           value={yangiMatn}
           onChange={(e) => setYangiMatn(e.target.value)}
           required
         ></textarea>
-        <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-xl transition-all shadow-md text-sm">
-          Fikrni yuborish
-        </button>
+        <button type="submit" className="primary-button compact-button">Fikrni yuborish <span>→</span></button>
       </form>
 
-      <div className="space-y-4">
+      <div className="review-list">
         {fikrlar.map((fikr) => (
-          <div key={fikr.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-            <div className="flex justify-between items-center mb-2 gap-4">
+          <article key={fikr.id} className="review-card">
+            <div className="review-person">
+              <span className="review-avatar">{fikr.ism.charAt(0)}</span>
               <div>
-                <h5 className="font-bold text-slate-800">{fikr.ism}</h5>
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-medium">{fikr.kim}</span>
+                <h3>{fikr.ism}</h3>
+                <span>{fikr.kim}</span>
               </div>
-              <span className="text-xs text-slate-400">{fikr.sana}</span>
             </div>
-            <p className="text-slate-600 text-sm leading-relaxed">{fikr.matn}</p>
-          </div>
+            <span className="review-date">{fikr.sana}</span>
+            <div className="review-stars" aria-label="5 yulduz">★★★★★</div>
+            <p>{fikr.matn}</p>
+          </article>
         ))}
       </div>
     </div>
@@ -88,4 +90,3 @@ function Reviews() {
 }
 
 export default Reviews;
-

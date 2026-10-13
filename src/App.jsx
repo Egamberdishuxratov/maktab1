@@ -5,73 +5,176 @@ import Order from './Order';
 import Orders from './Orders';
 import Review from './Review';
 import About from './About';
-import './App.css'
+import Login from './Login';
+import './App.css';
+
+const pages = [
+  { id: 'home', label: 'Bosh sahifa', icon: '⌂' },
+  { id: 'menu', label: 'Menyu', icon: '▤' },
+  { id: 'order', label: 'Buyurtma berish', icon: '▣' },
+  { id: 'orders', label: 'Buyurtmalarim', icon: '◷' },
+  { id: 'review', label: 'Sharhlar', icon: '♡' },
+  { id: 'about', label: 'Biz haqimizda', icon: 'ⓘ' },
+];
 
 function App() {
-  const [sahifa, setSahifa] = useState('home');
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const pages = [
-    { id: 'home', label: 'Bosh sahifa' },
-    { id: 'menu', label: 'Menyu' },
-    { id: 'order', label: 'Buyurtma' },
-    { id: 'orders', label: 'Buyurtmalar' },
-    { id: 'review', label: 'Sharhlar' },
-    { id: 'about', label: 'Biz haqimizda' },
-  ];
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [page, setPage] = useState('menu');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navigate = (page) => {
-    setSahifa(page);
-    setMobileNavOpen(false);
+  const navigate = (nextPage) => {
+    setPage(nextPage);
+    setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  if (!isLoggedIn) {
+    return (
+      <Login
+        onLogin={(account) => {
+          setProfileName(account.name);
+          setIsLoggedIn(true);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <nav className="bg-white/80 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-50 shadow-sm">
-        <div className="site-nav max-w-6xl mx-auto px-4 flex justify-between items-center">
-          <button onClick={() => navigate('home')} className="flex items-center gap-2 cursor-pointer font-black text-xl text-emerald-600">
-            <span>🏫</span> Smart Oshxona
+    <div className="app-background">
+      <div className="app-frame">
+        <header className="topbar">
+          <button className="brand" onClick={() => navigate('home')} type="button" aria-label="Bosh sahifa">
+            <span className="brand-mark">S</span>
+            <span>SMART <strong>OSHXONA</strong></span>
           </button>
 
           <button
-            className="mobile-nav-toggle"
+            className="mobile-menu-button"
             type="button"
-            aria-expanded={mobileNavOpen}
-            aria-controls="main-navigation"
-            aria-label={mobileNavOpen ? 'Menyuni yopish' : 'Menyuni ochish'}
-            onClick={() => setMobileNavOpen((open) => !open)}
+            aria-expanded={sidebarOpen}
+            aria-controls="app-sidebar"
+            aria-label={sidebarOpen ? 'Navigatsiyani yopish' : 'Navigatsiyani ochish'}
+            onClick={() => setSidebarOpen((open) => !open)}
           >
-            <span aria-hidden="true">{mobileNavOpen ? '×' : '☰'}</span>
+            {sidebarOpen ? '×' : '☰'}
           </button>
 
-          <ul id="main-navigation" className={`site-navigation ${mobileNavOpen ? 'is-open' : ''}`}>
-            {pages.map((page) => (
-              <li key={page.id}>
-              <button
-                onClick={() => navigate(page.id)}
-                aria-current={sahifa === page.id ? 'page' : undefined}
-                className={`px-3 py-2 rounded-xl transition-all ${sahifa === page.id ? 'bg-emerald-50 text-emerald-600' : 'hover:bg-slate-50'}`}
-              >
-                {page.label}
-              </button>
-              </li>
-            ))}
-          </ul>
+          <nav className="top-links" aria-label="Asosiy navigatsiya">
+            {['home', 'menu', 'about'].map((id) => {
+              const item = pages.find((entry) => entry.id === id);
+              return (
+                <button
+                  className={page === id ? 'top-link is-active' : 'top-link'}
+                  type="button"
+                  key={id}
+                  onClick={() => navigate(id)}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="top-actions">
+            <button className="top-icon-button" type="button" onClick={() => navigate('order')} aria-label="Buyurtma berish">
+              ♧
+            </button>
+            <button className="profile-button" type="button" onClick={() => navigate('orders')} aria-label="Buyurtmalarim">
+              A
+            </button>
+          </div>
+        </header>
+
+        <div className="app-layout">
+          {sidebarOpen && <button className="sidebar-scrim" type="button" onClick={() => setSidebarOpen(false)} aria-label="Navigatsiyani yopish" />}
+          <aside id="app-sidebar" className={`sidebar ${sidebarOpen ? 'is-open' : ''}`}>
+            <div className="profile-card">
+              <div className="profile-avatar">{profileName.charAt(0).toUpperCase()}</div>
+              <strong>{profileName}</strong>
+              <span>O'quvchi · 9-A sinf</span>
+              <div className="profile-badge">● Maktab oshxonasi a'zosi</div>
+            </div>
+
+            <p className="sidebar-label">MENING SAHIFAM</p>
+            <nav className="sidebar-nav" aria-label="Sahifalar">
+              {pages.map((item) => (
+                <button
+                  className={page === item.id ? 'sidebar-link is-active' : 'sidebar-link'}
+                  type="button"
+                  key={item.id}
+                  aria-current={page === item.id ? 'page' : undefined}
+                  onClick={() => navigate(item.id)}
+                >
+                  <span className="sidebar-icon" aria-hidden="true">{item.icon}</span>
+                  <span>{item.label}</span>
+                  {item.id === 'orders' && <span className="sidebar-link-hint">›</span>}
+                </button>
+              ))}
+            </nav>
+
+            <div className="sidebar-tip">
+              <span className="sidebar-tip-icon">✦</span>
+              <strong>Bugun yangi taomlar!</strong>
+              <p>Tanaffusdan oldin buyurtma berib, navbatni o'tkazib yuboring.</p>
+              <button type="button" onClick={() => navigate('menu')}>Menyuni ko'rish →</button>
+            </div>
+            <button
+              className="logout-button"
+              type="button"
+              onClick={() => {
+                setIsLoggedIn(false);
+                setSidebarOpen(false);
+              }}
+            >
+              ↪ Chiqish
+            </button>
+          </aside>
+
+          <main className="page-content">
+            {page === 'home' && <Home setSahifa={navigate} />}
+            {page === 'menu' && <Menu setSahifa={navigate} />}
+            {page === 'order' && <Order />}
+            {page === 'orders' && <Orders />}
+            {page === 'review' && <Review />}
+            {page === 'about' && <About />}
+          </main>
         </div>
-      </nav>
 
-      <main className="flex-grow">
-        {sahifa === 'home' && <Home setSahifa={setSahifa} />}
-        {sahifa === 'menu' && <Menu />}
-        {sahifa === 'order' && <Order />}
-        {sahifa === 'orders' && <Orders />}
-        {sahifa === 'review' && <Review />}
-        {sahifa === 'about' && <About />}
-      </main>
-
-      <footer className="bg-white border-t border-slate-100 py-6 text-center text-sm text-slate-400">
-        <p>© {new Date().getFullYear()} Smart Maktab Oshxonasi Tizimi. Barcha huquqlar himoyalangan.</p>
-      </footer>
-
+        <footer className="site-footer">
+          <div className="footer-main">
+            <div className="footer-brand-block">
+              <div className="footer-brand"><span className="brand-mark">S</span> SMART OSHXONA</div>
+              <p>O'quvchilar uchun har kuni yangi va mazali taomlar. Mehr bilan tayyorlanadi.</p>
+              <div className="social-links" aria-label="Ijtimoiy tarmoqlar">
+                <span>ig</span><span>f</span><span>t</span>
+              </div>
+            </div>
+            <div className="footer-column">
+              <h2>BO'LIMLAR</h2>
+              <button onClick={() => navigate('home')} type="button">Bosh sahifa</button>
+              <button onClick={() => navigate('menu')} type="button">Menyu</button>
+              <button onClick={() => navigate('orders')} type="button">Buyurtmalarim</button>
+            </div>
+            <div className="footer-column">
+              <h2>MA'LUMOT</h2>
+              <button onClick={() => navigate('about')} type="button">Biz haqimizda</button>
+              <button onClick={() => navigate('review')} type="button">Fikr bildirish</button>
+              <span>Maxfiylik va xavfsizlik</span>
+            </div>
+            <div className="footer-column">
+              <h2>ALOQA</h2>
+              <span>☎ +998 (71) 234-56-78</span>
+              <span>✉ oshxona@maktab.uz</span>
+              <span>⌖ Maktab oshxonasi</span>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <span>© {new Date().getFullYear()} Smart Oshxona. Barcha huquqlar himoyalangan.</span>
+            <span>Yangi tayyorlandi, mehr bilan tortildi.</span>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

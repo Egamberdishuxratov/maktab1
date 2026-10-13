@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { menuItems } from './data';
 import { useOrderHistory } from './orderHistory';
+import FoodCard from './FoodCard';
 
 const createOrderId = () => `ORD-${Date.now().toString().slice(-6)}`;
 
@@ -47,7 +48,7 @@ function Order() {
             name: name.trim(),
             phone: phone.trim(),
             time,
-            items: cart.map(({ id, nom, narx, rasm, quantity }) => ({ id, nom, narx, rasm, quantity })),
+            items: cart.map(({ id, nom, narx, imageUrl, quantity }) => ({ id, nom, narx, imageUrl, quantity })),
             total,
             status: 'accepted',
             createdAt: new Date().toISOString(),
@@ -72,7 +73,7 @@ function Order() {
                     {cart.map((item) => (
                         <article className="cart-item" key={item.id}>
                             <div className="cart-item-heading">
-                                <span className="cart-emoji" aria-hidden="true">{item.rasm}</span>
+                                <img className="cart-thumbnail" src={item.imageUrl} alt="" />
                                 <div className="cart-item-details">
                                     <h4>{item.nom}</h4>
                                     <p>{(item.narx * item.quantity).toLocaleString()} so'm</p>
@@ -121,17 +122,7 @@ function Order() {
 
                         <div className="order-product-grid">
                             {menuItems.map((product) => (
-                                <article className="product-card order-product" key={product.id}>
-                                    <span className="product-emoji" aria-hidden="true">{product.rasm}</span>
-                                    <div className="order-product-copy">
-                                        <h2>{product.nom}</h2>
-                                        <p>{product.description}</p>
-                                        <strong>{product.narx.toLocaleString()} so'm</strong>
-                                    </div>
-                                    <button className="add-product" type="button" onClick={() => addToCart(product)}>
-                                        + Qo'shish
-                                    </button>
-                                </article>
+                                <FoodCard key={product.id} product={product} onAction={addToCart} actionLabel="Savatchaga" />
                             ))}
                         </div>
                     </>
@@ -151,7 +142,7 @@ function Order() {
                             </div>
                             {cart.map((item) => (
                                 <div className="summary-row" key={item.id}>
-                                    <span>{item.rasm} {item.nom} × {item.quantity}</span>
+                                    <span className="summary-product"><img src={item.imageUrl} alt="" /> {item.nom} × {item.quantity}</span>
                                     <strong>{(item.narx * item.quantity).toLocaleString()} so'm</strong>
                                 </div>
                             ))}

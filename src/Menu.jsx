@@ -1,84 +1,96 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { menuItems } from './data';
+import FoodCard from './FoodCard';
 
-function Menu() {
-    const [qidiruv, setQidiruv] = useState('');
-    const [tanlanganTur, setTanlanganTur] = useState('all');
+const categories = [
+    { id: 'all', label: 'Barchasi' },
+    { id: 'issiq', label: 'Issiq taomlar' },
+    { id: 'salat', label: 'Salatlar' },
+    { id: 'ichimlik', label: 'Ichimliklar' },
+];
 
-    const saralanganTaomlar = menuItems.filter((taom) => {
-        const turigaMos = tanlanganTur === 'all' || taom.tur === tanlanganTur;
-        const qidiruvgaMos = taom.nom.toLowerCase().includes(qidiruv.toLowerCase());
-        return turigaMos && qidiruvgaMos;
-    });
+function Menu({ setSahifa }) {
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('all');
+    const [sort, setSort] = useState('popular');
+
+    const filteredProducts = useMemo(() => {
+        const products = menuItems.filter((product) => {
+            const matchesCategory = category === 'all' || product.tur === category;
+            const matchesSearch = `${product.nom} ${product.description}`.toLowerCase().includes(search.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
+
+        return [...products].sort((left, right) => {
+            if (sort === 'price-asc') return left.narx - right.narx;
+            if (sort === 'price-desc') return right.narx - left.narx;
+            return right.rating - left.rating;
+        });
+    }, [category, search, sort]);
 
     return (
-        <div className="max-w-6xl mx-auto py-10 px-4">
-            <div className="text-center mb-10">
-                <p className="text-sm uppercase tracking-[0.25em] text-emerald-600 font-bold">Menyu</p>
-                <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mt-3">📋 Oshxona Haftalik Menyusi</h2>
-                <p className="text-slate-500 mt-2">Bugungi tanlov va shifobaxsh taomlarimiz bilan tanishing</p>
-            </div>
-
-            <div className="soft-card mb-8 p-4 md:p-6">
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <input
-                        type="text"
-                        placeholder="Taom nomini yozing..."
-                        className="w-full md:max-w-xs px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                        value={qidiruv}
-                        onChange={(e) => setQidiruv(e.target.value)}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                        {['all', 'issiq', 'ichimlik', 'salat'].map((tur) => (
-                            <button
-                                key={tur}
-                                onClick={() => setTanlanganTur(tur)}
-                                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tanlanganTur === tur
-                                    ? 'bg-emerald-600 text-white shadow-md'
-                                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                                }`}
-                            >
-                                {tur === 'all' ? 'Barchasi' : tur === 'issiq' ? '🔥 Issiq taomlar' : tur === 'ichimlik' ? '🧃 Ichimliklar' : '🥗 Salatlar'}
-                            </button>
-                        ))}
-                    </div>
+        <div className="page-inner">
+            <header className="page-heading-row">
+                <div>
+                    <span className="section-kicker">HAR KUN YANGI TAYYORLANADI</span>
+                    <h1>Bugungi menyu</h1>
+                    <p>Sevimli taomingizni tanlang — buyurtma berish bir necha soniya oladi.</p>
                 </div>
+                <button className="primary-button compact-button" type="button" onClick={() => setSahifa('order')}>Buyurtma berish <span>→</span></button>
+            </header>
+
+            <div className="menu-toolbar">
+                <label className="search-field">
+                    <span aria-hidden="true">⌕</span>
+                    <input
+                        type="search"
+                        placeholder="Taom nomi yoki tarkibini qidiring..."
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                    />
+                </label>
+                <label className="sort-field">
+                    <span>Tartiblash</span>
+                    <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                        <option value="popular">Mashhurligi</option>
+                        <option value="price-asc">Arzonidan</option>
+                        <option value="price-desc">Qimmatidan</option>
+                    </select>
+                </label>
             </div>
 
-            <div className="mb-6 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-slate-800">Top taomlar ({saralanganTaomlar.length})</h3>
-                <span className="text-sm text-slate-500">Har kuni yangi tayyorlov</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {saralanganTaomlar.map((taom) => (
-                    <div key={taom.id} className="product-card flex flex-col text-left">
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="badge">{taom.tag}</span>
-                            <span className="text-sm font-bold text-amber-500">★ {taom.rating}</span>
-                        </div>
-                        <div className="text-6xl mb-4">{taom.rasm}</div>
-                        <h4 className="text-xl font-bold text-slate-800">{taom.nom}</h4>
-                        <p className="mt-2 text-sm text-slate-500">{taom.description}</p>
-
-                        <div className="mt-5 space-y-2 text-sm text-slate-500">
-                            <div className="flex items-center justify-between">
-                                <span>Energiya</span>
-                                <strong className="text-orange-500">{taom.kaloriya}</strong>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span>Narxi</span>
-                                <strong className="text-emerald-600">{taom.narx.toLocaleString()} so'm</strong>
-                            </div>
-                        </div>
-                    </div>
+            <div className="category-tabs" aria-label="Menyu bo'yicha filter">
+                {categories.map((item) => (
+                    <button
+                        className={category === item.id ? 'category-tab is-active' : 'category-tab'}
+                        type="button"
+                        key={item.id}
+                        aria-pressed={category === item.id}
+                        onClick={() => setCategory(item.id)}
+                    >
+                        {item.label}
+                    </button>
                 ))}
             </div>
 
-            {saralanganTaomlar.length === 0 && (
-                <div className="soft-card mt-8 p-8 text-center">
-                    <h4 className="text-xl font-bold text-slate-800">Hech narsa topilmadi</h4>
-                    <p className="text-slate-500 mt-2">Boshqa so\'z yoki tur tanlab ko\'ring.</p>
+            <div className="section-heading menu-results-heading">
+                <div>
+                    <h2>Taomlar <span className="result-count">{filteredProducts.length}</span></h2>
+                </div>
+                <span className="muted-copy">Bugun siz uchun tanlandi</span>
+            </div>
+
+            {filteredProducts.length > 0 ? (
+                <div className="food-grid">
+                    {filteredProducts.map((product) => (
+                        <FoodCard key={product.id} product={product} onAction={() => setSahifa('order')} actionLabel="Tanlash" />
+                    ))}
+                </div>
+            ) : (
+                <div className="empty-state">
+                    <span>⌕</span>
+                    <h2>Taom topilmadi</h2>
+                    <p>Qidiruv so'zini yoki tanlangan bo'limni o'zgartirib ko'ring.</p>
                 </div>
             )}
         </div>

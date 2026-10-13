@@ -1,4 +1,5 @@
 import { useOrderHistory, orderStatuses } from './orderHistory';
+import { menuItems } from './data';
 
 const statusLabels = {
     accepted: 'Qabul qilindi',
@@ -68,7 +69,10 @@ function Orders() {
                                 <div className="history-order-items">
                                     {order.items.map((item) => (
                                         <div className="summary-row" key={item.id}>
-                                            <span>{item.rasm} {item.nom} × {item.quantity}</span>
+                                            <span className="summary-product">
+                                                <img src={item.imageUrl || menuItems.find((product) => product.id === item.id)?.imageUrl} alt="" />
+                                                {item.nom} × {item.quantity}
+                                            </span>
                                             <strong>{(item.narx * item.quantity).toLocaleString()} so'm</strong>
                                         </div>
                                     ))}
